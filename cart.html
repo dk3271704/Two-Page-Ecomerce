@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shopping Cart</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f7f9fc;
+      color: #333;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #444;
+    }
+
+    .back-link {
+      font-size: 16px;
+      text-decoration: none;
+      background: #007bff;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 5px;
+      transition: background 0.3s ease;
+    }
+
+    .back-link:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f0f2f5;
+      font-size: 16px;
+      color: #555;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .quantity-btn {
+      padding: 6px 12px;
+      font-size: 14px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin: 0 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .quantity-btn:hover {
+      background: #218838;
+    }
+
+    .delete-btn {
+      padding: 6px 12px;
+      font-size: 14px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-left: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .delete-btn:hover {
+      background: #c82333;
+    }
+
+    .total {
+      margin-top: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: right;
+      color: #333;
+    }
+
+    .empty-message {
+      text-align: center;
+      font-size: 18px;
+      color: #888;
+      margin-top: 40px;
+    }
+
+    #place-order-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+
+    #place-order-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🛒 Your Cart</h1>
+    <a class="back-link" href="index.html">← Continue Shopping</a>
+  </div>
+
+  <div id="cart-section">
+    <table id="cart-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="cart-body"></tbody>
+    </table>
+
+    <div class="total" id="cart-totals">
+      Total Quantity: <span id="total-qty">0</span> |
+      Total Price: $<span id="total-price">0.00</span>
+    </div>
+
+    <div style="text-align: right;">
+      <button id="place-order-btn">Place Order</button>
+    </div>
+  </div>
+
+  <div class="empty-message" id="empty-message" style="display:none;">
+    Your cart is currently empty. 🛒<br/><br/>
+    <a class="back-link" href="index.html">Shop Now</a>
+  </div>
+
+  <script>
+    function loadCart() {
+      const cart = JSON.parse(localStorage.getItem("cart")) || {};
+      const tbody = document.getElementById("cart-body");
+      const totals = document.getElementById("cart-totals");
+      const table = document.getElementById("cart-table");
+      const emptyMessage = document.getElementById("empty-message");
+      const placeOrderBtn = document.getElementById("place-order-btn");
+
+      tbody.innerHTML = "";
+      let totalQty = 0;
+      let totalPrice = 0;
+
+      const cartItems = Object.keys(cart);
+      if (cartItems.length === 0) {
+        table.style.display = "none";
+        totals.style.display = "none";
+        emptyMessage.style.display = "block";
+        placeOrderBtn.style.display = "none";
+        return;
+      } else {
+        table.style.display = "table";
+        totals.style.display = "block";
+        emptyMessage.style.display = "none";
+        placeOrderBtn.style.display = "inline-block";
+      }
+
+      for (const id in cart) {
+        const item = cart[id];
+        totalQty += item.quantity;
+        totalPrice += item.price * item.quantity;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>$${item.price.toFixed(2)}</td>
+            <td>${item.quantity}</td>
+            <td>
+              <button class="quantity-btn" onclick="changeQty(${item.id}, 1)">+</button>
+              <button class="quantity-btn" onclick="changeQty(${item.id}, -1)">−</button>
+              <button class="delete-btn" onclick="deleteItem(${item.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      document.getElementById("total-qty").innerText = totalQty;
+      document.getElementById("total-price").innerText = totalPrice.toFixed(2);
+    }
+
+    function changeQty(id, delta) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || {};
+      if (cart[id]) {
+        cart[id].quantity += delta;
+        if (cart[id].quantity <= 0) {
+          delete cart[id];
+        }
+        localStorage.setItem("cart", JSON.stringify(cart));
+        loadCart();
+      }
+    }
+
+    function deleteItem(id) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || {};
+      if (cart[id]) {
+        delete cart[id];
+        localStorage.setItem("cart", JSON.stringify(cart));
+        loadCart();
+      }
+    }
+
+    document.getElementById("place-order-btn").addEventListener("click", () => {
+      const cart = JSON.parse(localStorage.getItem("cart")) || {};
+      if (Object.keys(cart).length === 0) {
+        alert("Your cart is empty!");
+        return;
+      }
+
+      if (confirm("Are you sure you want to place this order?")) {
+        localStorage.removeItem("cart");
+        alert("✅ Order placed successfully!");
+        loadCart();
+      }
+    });
+
+    loadCart();
+  </script>
+</body>
+</html>
